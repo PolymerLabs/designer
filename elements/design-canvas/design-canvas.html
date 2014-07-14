@@ -312,14 +312,23 @@ Polymer({
     // attach handlers to the dragInfo
     //
     dragInfo.drag = function() {
+      var prnt = {left: 0, top: 0};
+      if(this.dropTarget) {
+          prnt = this.dropTarget.getBoundingClientRect();
+      }
       var p = snap(this.start.x + this.event.dx, this.start.y + this.event.dy);
       rule.style.left = p.x + 'px';
       rule.style.top = p.y + 'px';
+
+      this.endPoint = snap(this.start.x + this.event.dx - prnt.left, this.start.y + this.event.dy - prnt.top);
       dropHint(this);
     };
     dragInfo.drop = function() {
       this.dropTarget = this.dropTarget || scope(this.event.relatedTarget);
-      return drop(this);
+        rule.style.left = this.endPoint.x + 'px';
+        rule.style.top = this.endPoint.y + 'px';
+
+        return drop(this);
     };
   },
 
@@ -396,9 +405,14 @@ Polymer({
   decorateElement: function(element) {
     var s = this.ruleForElement(element).style;
     // designer is absolutely positioned, ad-hoc
-    s.position = 'absolute';
+    //s.position = 'absolute';
+    if(s.position !== "absolute"){
+        s.left = s.top = '';
+    }
+
+
     if (element.parentNode !== this.designHost) {
-      s.left = s.top = s.position = '';
+      //s.left = s.top = s.position = '';
     }
     //
     var decorate = function(element) {
