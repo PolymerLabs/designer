@@ -405,16 +405,9 @@ Polymer({
   decorateElement: function(element) {
     var s = this.ruleForElement(element).style;
     // designer is absolutely positioned, ad-hoc
-    //s.position = 'absolute';
     if(s.position !== "absolute"){
         s.left = s.top = '';
     }
-
-
-    if (element.parentNode !== this.designHost) {
-      //s.left = s.top = s.position = '';
-    }
-    //
     var decorate = function(element) {
       if (element.localName === 'style') {
         return;
