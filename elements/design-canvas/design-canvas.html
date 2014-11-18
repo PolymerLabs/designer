@@ -101,14 +101,31 @@ Polymer({
   },
 
   // commands
-
-  deleteElement: function() {
-    var e = this.selected;
+   deleteElement: function(passedEl) {
+    var e = null;
+    if(passedEl) {
+      e = passedEl;
+    } else {
+      e = this.selected;
+    }
     if (e && e !== this && e !== this.designHost) {
       var parent = e.parentNode;
       parent.removeChild(e);
       forSubtree(e, this.removeElementRule.bind(this));
       this.selected = parent === this ? this.designHost : parent;
+    }
+  },
+
+  deleteAll: function() {
+    var designHost = this.designHost,
+        self = this;
+    if(designHost.children.length > 0) {
+      for(var i =0; i < designHost.children.length; i++) {
+        if(designHost.children[i].tagName.toLowerCase() !== 'style') {
+          self.deleteElement(designHost.children[i]);
+          i-=1;
+        }
+      }
     }
   },
 
