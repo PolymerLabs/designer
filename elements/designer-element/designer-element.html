@@ -53,6 +53,7 @@
       <core-icon-button title="Redo" disabled?="{{!$.state.canForward}}" icon="image:rotate-right" on-tap="{{redoAction}}"></core-icon-button>
       <span class="separator" hidden?="{{selected == 'code'}}"></span>
       <core-icon-button title="Toggle Fullwidth" icon="drawer" class="{{ {selected: maximized} | tokenList}}" on-tap="{{fullscreenAction}}"></core-icon-button>
+      <core-icon-button title="Remove All" icon="delete" on-tap="{{deleteAll}}"></core-icon-button>
     </div>
 
   </core-toolbar>
@@ -259,6 +260,10 @@ Polymer({
 
   deleteElement: function(event) {
     this.designer.deleteElement();
+  },
+
+  deleteAll: function(event) {
+    this.designer.deleteAll();
   },
 
   promoteElement: function(event) {
