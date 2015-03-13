@@ -10,37 +10,45 @@
 <!doctype html>
 <html>
 <head>
-  <title>Element Preview</title>
+
+  <title>Designer</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="mobile-web-app-capable" content="yes">
 
-  <script src="components/webcomponentsjs/webcomponents.js"></script>
-  <link rel="import" href="elements/own-design-gist-element-preview/own-design-gist-element-preview.html"/>
+
+
+  <link rel="import" href="designer-element.html">
+    <base href="/">
 
   <style>
-    body, html {
+    body {
+      font-family: sans-serif;
       margin: 0;
-      height: 100%;
+      overflow: hidden;
     }
-    own-design-gist-element-preview {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
+    designer-element {
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
     }
   </style>
 
 </head>
 <body unresolved>
 
-  <own-design-gist-element-preview id="preview"></own-design-gist-element-preview>
-  <script>
-    addEventListener('polymer-ready', function() {
-      var fileId = window.location.hash.replace('#', '')
-      document.getElementById('preview').open(fileId);
-    })
-  </script>
+<script>
+    var metadata = [
+        '../core-elements/metadata.html',
+        '../paper-elements/metadata.html',
+        '../paper-calculator/metadata.html',
+        '../more-elements/metadata.html',
+        '../topeka-elements/metadata.html'
+    ];
+</script>
+
+  <designer-element id="designer" ></designer-element>
+
 
 </body>
 </html>
