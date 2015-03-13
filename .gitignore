@@ -1,4 +1,8 @@
-components
+components/*
+!components/polymer-designer
+
 /.htaccess
 *.sublime-project
 *.sublime-workspace
+/.idea
+

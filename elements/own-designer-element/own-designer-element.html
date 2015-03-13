@@ -1,0 +1,158 @@
+<link rel="import" href="../../components/polymer/polymer.html">
+<link rel="import" href="../../components/polymer-designer/designer-element.html"/>
+<link rel="import" href="../../components/github-elements/github-elements.html">
+<link rel="import" href="../own-design-gist-element-preview/own-design-github-info.html">
+<link rel="import" href="../../components/polymer-designer/elements/design-iconset/design-iconset.html">
+<polymer-element name="own-designer-element" >
+
+  <template>
+      <style>
+          body {
+              font-family: sans-serif;
+              margin: 0;
+              overflow: hidden;
+          }
+          designer-element {
+              height: 100vh;
+              width: 100vw;
+              overflow: hidden;
+          }
+          core-icon-button.rotate {
+              transform: rotate(90deg);
+              -webkit-transform: rotate(90deg);
+          }
+      </style>
+
+  <designer-element id="designer" >
+          <div class="design-controls" horizontal center layout hidden?="{{selected == 'code'}}" appbar>
+              <core-icon-button title="Toggle Code/Design" icon="unfold-more" class="rotate {{ {selected: selected === 'code'} | tokenList }}" name="code" on-tap="{{codeToggleAction}}"></core-icon-button>
+
+              <span class="separator"></span>
+
+              <core-icon-button title="Save" icon="save" on-tap="{{saveAction}}"></core-icon-button>
+              <!-- shareAction must be triggered from click to allow opening a tab (otherwise can only open a floating window) -->
+              <core-icon-button title="Share Gist" icon="social:share" on-click="{{shareAction}}"></core-icon-button>
+              <core-icon-button title="Launch Preview" icon="launch" on-click="{{previewAction}}"></core-icon-button>
+              <span class="separator"></span>
+              <core-icon-button title="Undo" disabled?="{{!$.designer.$.state.canBack}}" icon="image:rotate-left" on-tap="{{undoAction}}"></core-icon-button>
+              <core-icon-button title="Redo" disabled?="{{!$.designer.$.state.canForward}}" icon="image:rotate-right" on-tap="{{redoAction}}"></core-icon-button>
+              <span class="separator" hidden?="{{selected == 'code'}}"></span>
+              <core-icon-button title="Toggle Fullwidth" icon="design-icons:drawer" class="{{ {selected: maximized} | tokenList}}" on-tap="{{fullscreenAction}}"></core-icon-button>
+          </div>
+  </designer-element>
+      <own-design-github-info id="githubInfo" token="{{githubToken}}"></own-design-github-info>
+      <github-element id="github" token="{{githubToken}}" on-files-loaded="{{documentLoaded}}" on-files-saved="{{documentSaved}}" on-files-updated="{{documentSaved}}" on-token-changed="{{tokenChangeHandler}}"></github-element>
+      <div id="toast"  class="{{ {showing: toastShowing } | tokenList }}">
+          <div>{{toast}}</div>
+      </div>
+  </template>
+
+  <script>
+    Polymer({
+        domReady:function(){
+            var self=this;
+            this.$.designer.addEventListener('onDesignerReady', function(e) {
+            var id = window.location.hash.replace('#', '');
+            if (id) {
+                self.fileId = id;
+                self.$.github.load(id);
+            }
+            });
+        },
+        saveAction:function(){
+            if (!this.ensureSignedIn(this.saveAction)) {
+                return;
+            }
+            this.toast = 'Saving...';
+            this.toastShowing = true;
+            this.save(function() {
+                this.toastShowing = false;
+            });
+        },
+        undoAction:function(){
+            this.$.designer.undoAction();
+        },
+        redoAction:function(){
+            this.$.designer.redoAction();
+        },
+        fullscreenAction:function(){
+          this.$.designer.fullscreenAction();
+        },
+        codeToggleAction:function(){
+            this.$.designer.codeToggleAction();
+        },
+        // support callback after logging in
+        ensureSignedIn: function(signInCallback) {
+            if (!this.$.github.token) {
+                this._signInCallback = signInCallback;
+                this.$.github.signIn();
+            } else {
+                return true;
+            }
+        },
+        shareAction: function() {
+            if (!this.ensureSignedIn(this.shareAction)) {
+                return;
+            }
+            // must open window immediately so that it opens in a tab, not a window
+            if (this.shareWindow) {
+                this.shareWindow.close();
+            }
+            this.shareWindow = window.open('', 'gist');
+            this.save(function() {
+                this.shareWindow.location.href = 'https://gist.github.com/' +
+                this.fileId;
+            });
+        },
+        previewAction: function() {
+            if (!this.ensureSignedIn(this.previewAction)) {
+                return;
+            }
+            if (this.previewWindow) {
+                this.previewWindow.close();
+            }
+            this.previewWindow = window.open('', 'preview');
+            this.save(function() {
+                this.previewWindow.location.href = 'preview.html#' + this.fileId;
+            });
+        },
+        save: function(callback) {
+            var self = this;
+            var saveCb = function() {
+                if (callback) {
+                    callback.call(self);
+                }
+            };
+            var updateCb = function(response) {
+                // update fails if gist is some other user's
+                // if this happens perform a save.
+                if (response && response.error === 404) {
+                    self.fileId = null;
+                    self.save(callback);
+                } else {
+                    saveCb();
+                }
+            };
+            var options = {};
+            options[this.$.githubInfo.fileName] = {content: this.$.designer.getContent()};
+            if (this.fileId) {
+                this.$.github.update(this.fileId, 'designer', true, options, updateCb);
+            } else {
+                this.$.github.save('designer', true, options, saveCb);
+            }
+        },
+
+
+        documentLoaded: function(event, detail) {
+            var doc = detail && detail[this.$.githubInfo.fileName];
+            if (doc) {
+                this.$.designer.remoteHtml = doc.content;
+            }
+        }
+
+
+    });
+
+  </script>
+
+</polymer-element>
