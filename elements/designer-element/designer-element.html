@@ -355,8 +355,13 @@ Polymer({
   loadRemoteContent: function() {
     var id = window.location.hash.replace('#', '');
     if (id) {
+      alert("Loading from gists has been temporarily disabled.");
+      return;
+
+      /* Disabled due to potential security hole.
       this.fileId = id;
       this.$.github.load(id);
+      */
     }
   },
 
