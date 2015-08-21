@@ -285,8 +285,37 @@ define('polymer-designer/dom-utils', function() {
     element.style.display = 'none';
   }
 
+  function clearChildren(element) {
+    let domApi = Polymer.dom(element);
+    let child;
+    while ((child = domApi.firstChild) != null) {
+      domApi.removeChild(child);
+    }
+  }
+
+  function renameNode(node, newName) {
+    let doc = node.ownerDocument;
+    let parent = node.parentNode;
+    let newNode = doc.createElement(newName);
+    let children = node.childNodes;
+    let attributes = node.attributes;
+
+    for (let i = 0; i < children.length; i++) {
+      let child = children[i];
+      newNode.appendChild(child);
+    }
+
+    for (let i = 0; i < attributes.length; i++) {
+      let attribute = attributes[i];
+      newNode.setAttribute(attribute.name, attribute.value);
+    }
+
+    parent.replaceChild(newNode, node);
+  }
+
   return {
     attributesForElement: attributesForElement,
+    clearChildren: clearChildren,
     designerNodeFilter: designerNodeFilter,
     getAncestors: getAncestors,
     getDocumentElement: getDocumentElement,
@@ -295,6 +324,7 @@ define('polymer-designer/dom-utils', function() {
     isDescendant: isDescendant,
     isDescendant: isDescendant,
     parseQueryString: parseQueryString,
+    renameNode: renameNode,
     setBounds: setBounds,
     show: show,
     sourceIdAttribute: sourceIdAttribute,
@@ -677,6 +707,16 @@ define('polymer-designer/commands', function() {
       };
     },
 
+    setTagName: function(sourceId, oldValue, newValue) {
+      return {
+        messageType: 'command',
+        commandType: 'setTagName',
+        sourceId: sourceId,
+        oldValue: oldValue,
+        newValue: newValue,
+      };
+    },
+
     /**
      * [path] and [selector] are used to find the CSS declaration to edit,
      * which may be:
@@ -834,6 +874,30 @@ define('polymer-designer/commands/DomCommandApplier', [
       undo: function(doc, command) {
         let node = getNode(doc, command.sourceId);
         node.textContent = command.oldValue;
+      },
+    },
+
+    'setTagName': {
+      canApply: function(doc, command) {
+        let node = getNode(doc, command.sourceId);
+        return node &&
+            node.tagName.toLowerCase() === command.oldValue.toLowerCase();
+      },
+
+      apply: function(doc, command) {
+        let node = getNode(doc, command.sourceId);
+        domUtils.renameNode(node, command.newValue);
+      },
+
+      canUndo: function(doc, command) {
+        let node = getNode(doc, command.sourceId);
+        return node &&
+            node.tagName.toLowerCase() === command.newValue.toLowerCase();
+      },
+
+      undo: function(doc, command) {
+        let node = getNode(doc, command.sourceId);
+        domUtils.renameNode(node, command.oldValue);
       },
     },
 
@@ -1593,13 +1657,23 @@ define('polymer-designer/protocol/DocumentServer', [
     }
 
     _onCommand(request) {
-      this.commandApplier.apply(request.message.command);
-      // TODO: how can we tell what non-doc side effects, like the following
-      // need to be propagated?
-      request.reply({
+      let command = request.message.command;
+      this.commandApplier.apply(command);
+
+      // TODO(justinfagnani): we need a better way to know what parts of the
+      // document are invalidated by a command and need to be re-synced to the
+      // client. Here we assume that if a command references an element by
+      // sourceId that it modifies or replaces that element, so we reselect it
+      // and respond with new elementInfo and bounds.
+      if (command.sourceId) {
+        this._selectElementForSourceId(command.sourceId);
+      }
+      let response = {
         bounds: this._elementBounds(this.currentElement),
         elementInfo: this._elementInfo(this.currentElement),
-      });
+      };
+      console.log('command response', response);
+      request.reply(response);
     }
 
     /**
@@ -1679,15 +1753,18 @@ define('polymer-designer/protocol/DocumentServer', [
     }
 
     selectElementForSourceId(request) {
-      let node = document.querySelector(
-          `[${domUtils.sourceIdAttribute}="${request.message.sourceId}"]`);
-      this.currentElement = node;
-      this.cursorManager = new CursorManager(this.currentElement);
-
+      this._selectElementForSourceId(request.message.sourceId);
       request.reply({
         bounds: this._elementBounds(this.currentElement),
         elementInfo: this._elementInfo(this.currentElement),
       });
+    }
+
+    _selectElementForSourceId(sourceId) {
+      let node = document.querySelector(
+          `[${domUtils.sourceIdAttribute}="${sourceId}"]`);
+      this.currentElement = node;
+      this.cursorManager = new CursorManager(this.currentElement);
     }
 
     selectionBoundsChanged(request) {
