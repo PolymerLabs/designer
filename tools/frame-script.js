@@ -8,7 +8,7 @@ var dependencies = [
   'src/commands/commands.js',
   'src/commands/CommandApplier.js',
   'src/commands/DomCommandApplier.js',
-  'src/protocol/Request.js',
+  'src/protocol/request.js',
   'src/async/async.js',
   'src/text/PositionWalker.js',
   'src/text/CursorManager.js',
