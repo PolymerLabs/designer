@@ -41,7 +41,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <script>
 
-define(['polymer-designer/dom-utils'], (domUtils) => {
+define(['polymer-designer/dom-utils', 'dom5'], (domUtils, dom5) => {
   'use strict';
 
   Polymer({
@@ -127,7 +127,7 @@ define(['polymer-designer/dom-utils'], (domUtils) => {
           this._selectedIndex < this._nodePath.length) {
         let newNode = this._nodePath[this._selectedIndex];
         this.fire('designer-select-element', {
-          sourceId: domUtils.getSourceId(newNode),
+          sourceId: dom5.getAttribute(newNode, domUtils.sourceIdAttribute),
         }, { bubbles: true, });
       }
     },
